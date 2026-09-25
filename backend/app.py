@@ -119,10 +119,17 @@ def list_batches(_user: dict = Depends(current_user)):
 
 @app.post("/api/batches", status_code=201)
 def create_batch(body: BatchIn, user: dict = Depends(require_writer)):
-    raw = body.herb if accept_blank_form(body.herb) else body.herb.strip()
-    if not accept_direct_api(raw):
+    # 第一道：页面表单入口，空/纯空白挡下
+    if not accept_blank_form(body.herb):
         raise HTTPException(status_code=400, detail="饮片名不能为空")
-    herb = auto_name_before_store(raw)
+    # 第二道：绕开页面的直连接口，同样挡下，不留旁路
+    if not accept_direct_api(body.herb):
+        raise HTTPException(status_code=400, detail="饮片名不能为空")
+    # 第三道：落库前只做归一化，绝不自动补名；空名在此仍会拒绝
+    try:
+        herb = auto_name_before_store(body.herb)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     doc = {"steps": [s.model_dump() for s in body.steps]}
     verdict, reason = judge(doc)
     with connect() as conn:

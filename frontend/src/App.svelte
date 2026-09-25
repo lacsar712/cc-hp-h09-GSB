@@ -40,6 +40,10 @@
 
   async function save() {
     error = ''
+    if (!herb || !herb.trim()) {
+      error = '饮片名不能为空'
+      return
+    }
     try {
       await api('/api/batches', {
         method: 'POST',
