@@ -40,11 +40,15 @@
 
   async function save() {
     error = ''
+    if (!(herb || '').trim()) {
+      error = '饮片名不能为空'
+      return
+    }
     try {
       await api('/api/batches', {
         method: 'POST',
         body: JSON.stringify({
-          herb,
+          herb: herb.trim(),
           steps: [{ name: '清炒', temp_c: Number(tempC), minutes: Number(minutes) }],
         }),
       })
